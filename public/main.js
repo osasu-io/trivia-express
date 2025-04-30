@@ -1,45 +1,36 @@
-var thumbUp = document.getElementsByClassName("fa-thumbs-up");
-var trash = document.getElementsByClassName("fa-trash");
+document.addEventListener('DOMContentLoaded', () => {
+  const saveBtn = document.getElementById('save-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      fetch('/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: document.querySelector('.random p:nth-child(3)').textContent.replace('Question: ', ''),
+          correct: document.querySelector('.random p:nth-child(4)').textContent.replace('Answer: ', ''),
+          category: document.querySelector('.random p:nth-child(2)').textContent.replace('Category: ', '')
+        })
+      }).then(res => res.json()).then(() => location.reload());
+    });
+  }
 
-Array.from(thumbUp).forEach(function(element) {
-      element.addEventListener('click', function(){
-        const name = this.parentNode.parentNode.childNodes[1].innerText
-        const msg = this.parentNode.parentNode.childNodes[3].innerText
-        const thumbUp = parseFloat(this.parentNode.parentNode.childNodes[5].innerText)
-        fetch('messages', {
-          method: 'put',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            'name': name,
-            'msg': msg,
-            'thumbUp':thumbUp
-          })
-        })
-        .then(response => {
-          if (response.ok) return response.json()
-        })
-        .then(data => {
-          console.log(data)
-          window.location.reload(true)
-        })
-      });
-});
+  document.querySelectorAll('.delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      fetch('/favorites', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: btn.dataset.q })
+      }).then(() => location.reload());
+    });
+  });
 
-Array.from(trash).forEach(function(element) {
-      element.addEventListener('click', function(){
-        const name = this.parentNode.parentNode.childNodes[1].innerText
-        const msg = this.parentNode.parentNode.childNodes[3].innerText
-        fetch('messages', {
-          method: 'delete',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            'name': name,
-            'msg': msg
-          })
-        }).then(function (response) {
-          window.location.reload()
-        })
-      });
+  document.querySelectorAll('.memorize').forEach(btn => {
+    btn.addEventListener('click', () => {
+      fetch('/memorize', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: btn.dataset.q })
+      }).then(() => location.reload());
+    });
+  });
 });
