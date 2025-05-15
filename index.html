@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Trivia Favorites Vault</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Trivia Vault</title>
 </head>
 <body>
-  <h1>🎉 Welcome to Trivia Favorites Vault</h1>
-  <p>This app lets you:</p>
-  <ul>
-    <li>Fetch random trivia questions from an API</li>
-    <li>Save your favorites to your own database</li>
-    <li>Mark questions as memorized</li>
-    <li>Delete ones you don’t like</li>
-  </ul>
-  <p><a href="/">Launch the app</a></p>
+  <h1>Trivia Vault</h1>
+  <h2>Save a Trivia Question</h2>
+
+  <form action="/trivia" method="POST">
+    <input type="text" placeholder="Trivia question" name="question">
+    <input type="text" placeholder="Answer" name="answer">
+    <input type="text" placeholder="Category" name="category">
+    <input type="text" placeholder="Difficulty" name="difficulty">
+    <button type="submit">Submit</button>
+  </form>
+
 </body>
 </html>

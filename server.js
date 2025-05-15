@@ -1,76 +1,66 @@
-const express = require('express');
-const app = express();
-const bodyParser = require('body-parser');
-const fetch = require('node-fetch');
-const MongoClient = require('mongodb').MongoClient;
-const config = require('./config/database.js');
+const express = require('express')
+require('dotenv').config();
+const app = express()
+const bodyParser = require('body-parser')
+const MongoClient = require('mongodb').MongoClient
 
 let db;
+const url = process.env.MONGO_URL;
+const dbName = process.env.DB_NAME;
 
-MongoClient.connect(config.url, { useUnifiedTopology: true }, (err, client) => {
-  if (err) return console.error(err);
-  db = client.db(config.dbName);
-  console.log(`Connected to ${config.dbName}`);
-});
 
-app.set('view engine', 'ejs');
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.listen(3000, () => {
+  MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+    if (err) return console.log(err)
+    db = client.db(dbName)
+    console.log('connected to database')
+  })
+})
+
+app.set('view engine', 'ejs')
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-  fetch('https://opentdb.com/api.php?amount=1')
-    .then(response => response.json())
-    .then(triviaData => {
-      const trivia = triviaData.results && triviaData.results.length > 0
-        ? triviaData.results[0]
-        : { category: 'Unknown', question: 'No trivia found.', correct_answer: 'N/A' };
+  db.collection('trivia').find().toArray((err, result) => {
+    if (err) return console.log(err)
+    res.render('index.ejs', { trivia: result })
+  })
+})
 
-      db.collection('favorites').find().toArray((err, saved) => {
-        if (err) return console.error(err);
-        res.render('index.ejs', {
-          trivia,
-          saved
-        });
-      });
-    })
-    .catch(err => {
-      console.error('API fetch failed:', err);
-      res.render('index.ejs', {
-        trivia: { category: 'Error', question: 'Could not load trivia.', correct_answer: 'N/A' },
-        saved: []
-      });
-    });
-});
-
-app.post('/favorites', (req, res) => {
-  db.collection('favorites').insertOne({
+app.post('/trivia', (req, res) => {
+  db.collection('trivia').insertOne({
     question: req.body.question,
-    correct: req.body.correct,
+    answer: req.body.answer,
     category: req.body.category,
+    difficulty: req.body.difficulty,
     memorized: false
   }, (err, result) => {
-    if (err) return console.log(err);
-    res.json({ success: true });
-  });
-});
+    if (err) return console.log(err)
+    console.log('saved to database')
+    res.redirect('/')
+  })
+})
 
 app.put('/memorize', (req, res) => {
-  db.collection('favorites').updateOne(
+  db.collection('trivia').findOneAndUpdate(
     { question: req.body.question },
     { $set: { memorized: true } },
+    { sort: { _id: -1 }, upsert: false },
     (err, result) => {
-      if (err) return res.send(err);
-      res.json('Marked as memorized');
+      if (err) return res.send(err)
+      res.send(result)
     }
-  );
-});
+  )
+})
 
-app.delete('/favorites', (req, res) => {
-  db.collection('favorites').deleteOne({ question: req.body.question }, (err, result) => {
-    if (err) return res.send(500, err);
-    res.json('Deleted');
-  });
-});
-
-app.listen(3000, () => console.log('Server running on 3000'));
+app.delete('/trivia', (req, res) => {
+  db.collection('trivia').findOneAndDelete(
+    { question: req.body.question },
+    (err, result) => {
+      if (err) return res.send(500, err)
+      res.send('Trivia deleted!')
+    }
+  )
+})
